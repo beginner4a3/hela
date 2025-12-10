@@ -1,0 +1,15 @@
+# Core dependencies
+pydub
+google-genai
+pydantic==2.10.6
+aiofiles
+soundfile
+
+# Parler TTS library (model ai4bharat/indic-parler-tts is loaded in app.py)
+git+https://github.com/huggingface/parler-tts.git
+torch
+transformers
+huggingface_hub
+
+# Gradio UI
+gradio
