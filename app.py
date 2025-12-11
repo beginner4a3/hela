@@ -400,30 +400,157 @@ def main(debug=True):
     
     voice_options = list(VOICE_CONFIGS.keys())
     
+    # Function to generate script only
+    def generate_script_only(input_text, input_file, language, api_key, progress=gr.Progress()):
+        if not input_text and input_file is None:
+            raise gr.Error("❌ Please enter some text OR upload a file!")
+        if not api_key or not api_key.strip():
+            raise gr.Error("❌ Please enter your Gemini API key!")
+        
+        try:
+            print("🚀 Generating script...")
+            sys.stdout.flush()
+            
+            file_obj = input_file if input_file else None
+            
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+            if loop and loop.is_running():
+                import nest_asyncio
+                nest_asyncio.apply()
+            
+            podcast_gen = PodcastGenerator()
+            script_json = asyncio.run(podcast_gen.generate_script(input_text, language, api_key, file_obj))
+            
+            # Format script for display
+            script_lines = []
+            for item in script_json.get('podcast', []):
+                speaker = f"Speaker {item['speaker']}"
+                script_lines.append(f"{speaker}: {item['line']}")
+            
+            formatted_script = "\n\n".join(script_lines)
+            print("✅ Script generated!")
+            sys.stdout.flush()
+            return formatted_script
+            
+        except Exception as e:
+            error_details = traceback.format_exc()
+            print(f"❌ Error generating script:\n{error_details}")
+            sys.stdout.flush()
+            raise gr.Error(f"Error: {str(e)}")
+    
+    # Function to generate audio from script
+    def generate_audio_from_script(script_text, speaker1, speaker2, progress=gr.Progress()):
+        if not script_text or not script_text.strip():
+            raise gr.Error("❌ No script to convert! Generate or enter a script first.")
+        
+        try:
+            print("🎙️ Converting script to audio...")
+            sys.stdout.flush()
+            
+            # Parse the script back to JSON format
+            lines = script_text.strip().split("\n\n")
+            podcast_json = {"podcast": []}
+            
+            for line in lines:
+                if line.strip():
+                    if line.startswith("Speaker 1:"):
+                        podcast_json["podcast"].append({
+                            "speaker": 1,
+                            "line": line.replace("Speaker 1:", "").strip()
+                        })
+                    elif line.startswith("Speaker 2:"):
+                        podcast_json["podcast"].append({
+                            "speaker": 2,
+                            "line": line.replace("Speaker 2:", "").strip()
+                        })
+            
+            if not podcast_json["podcast"]:
+                raise gr.Error("❌ Could not parse script. Use format: 'Speaker 1: text' or 'Speaker 2: text'")
+            
+            speaker1_desc = VOICE_CONFIGS.get(speaker1, VOICE_CONFIGS["Rohit - Male (Hindi/English)"])
+            speaker2_desc = VOICE_CONFIGS.get(speaker2, VOICE_CONFIGS["Divya - Female (Hindi/English)"])
+            
+            podcast_gen = PodcastGenerator()
+            audio_files = []
+            total_lines = len(podcast_json['podcast'])
+            
+            for i, item in enumerate(podcast_json['podcast']):
+                print(f"📊 Progress: {int((i+1)/total_lines*100)}% - Generating speech {i+1}/{total_lines}...")
+                sys.stdout.flush()
+                progress((i+1)/total_lines, f"Generating speech {i+1}/{total_lines}...")
+                
+                audio_file = podcast_gen.tts_generate(item['line'], item['speaker'], speaker1_desc, speaker2_desc)
+                audio_files.append(audio_file)
+            
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+            if loop and loop.is_running():
+                import nest_asyncio
+                nest_asyncio.apply()
+            
+            combined = asyncio.run(podcast_gen.combine_audio_files(audio_files))
+            print("✅ Podcast audio generated!")
+            sys.stdout.flush()
+            return combined
+            
+        except Exception as e:
+            error_details = traceback.format_exc()
+            print(f"❌ Error generating audio:\n{error_details}")
+            sys.stdout.flush()
+            raise gr.Error(f"Error: {str(e)}")
+    
     with gr.Blocks(title="🎙️ PodcastGen with Indic Parler TTS", theme=gr.themes.Soft()) as demo:
         gr.Markdown("# 🎙️ PodcastGen with Indic Parler TTS")
-        gr.Markdown("Generate AI podcasts with **high-quality Indian language TTS** powered by GPU!\n\nSupports: Hindi, Telugu, Tamil, Kannada, Malayalam, Bengali, Marathi, Gujarati, and 21+ languages!")
+        gr.Markdown("Generate AI podcasts with **high-quality Indian language TTS** powered by GPU!")
         
         with gr.Row():
             with gr.Column(scale=2):
-                input_text = gr.Textbox(label="📝 Input Text", lines=10, placeholder="Enter text for podcast generation...")
+                input_text = gr.Textbox(label="📝 Input Text / Topic", lines=6, placeholder="Enter text or topic for podcast generation...")
             with gr.Column(scale=1):
-                input_file = gr.File(label="📄 Or Upload a PDF or TXT file", file_types=[".pdf", ".txt"])
+                input_file = gr.File(label="📄 Or Upload File", file_types=[".pdf", ".txt"])
         
         with gr.Row():
-            with gr.Column():
-                api_key = gr.Textbox(label="🔑 Your Gemini API Key", placeholder="Enter API key here", type="password")
-                language = gr.Dropdown(label="🌍 Language", choices=language_options, value="Auto Detect")
-            with gr.Column():
-                speaker1 = gr.Dropdown(label="🎤 Speaker 1 Voice", choices=voice_options, value="Rohit - Male (Hindi/English)")
-                speaker2 = gr.Dropdown(label="🎤 Speaker 2 Voice", choices=voice_options, value="Divya - Female (Hindi/English)")
+            api_key = gr.Textbox(label="🔑 Gemini API Key", placeholder="Enter API key", type="password", scale=2)
+            language = gr.Dropdown(label="🌍 Language", choices=language_options, value="Auto Detect", scale=1)
         
-        generate_btn = gr.Button("🚀 Generate Podcast", variant="primary", size="lg")
+        # Step 1: Generate Script
+        gr.Markdown("### Step 1: Generate Script")
+        generate_script_btn = gr.Button("📝 Generate Script", variant="secondary", size="lg")
+        
+        script_output = gr.Textbox(
+            label="📜 Generated Script (Edit if needed)", 
+            lines=15, 
+            placeholder="Script will appear here. You can edit it before generating audio.\n\nFormat:\nSpeaker 1: First speaker's line\n\nSpeaker 2: Second speaker's line",
+            interactive=True
+        )
+        
+        # Step 2: Generate Audio
+        gr.Markdown("### Step 2: Choose Voices & Generate Audio")
+        with gr.Row():
+            speaker1 = gr.Dropdown(label="🎤 Speaker 1 Voice", choices=voice_options, value="Rohit - Male (Hindi/English)")
+            speaker2 = gr.Dropdown(label="🎤 Speaker 2 Voice", choices=voice_options, value="Divya - Female (Hindi/English)")
+        
+        generate_audio_btn = gr.Button("🎧 Generate Podcast Audio", variant="primary", size="lg")
         output_audio = gr.Audio(label="🎧 Generated Podcast", type="filepath", format="wav")
         
-        gr.Markdown("---\n### ℹ️ Tips:\n- Model **auto-detects** language from input\n- GPU acceleration makes TTS faster\n- First run may take longer")
-            
-        generate_btn.click(fn=generate_podcast_gradio, inputs=[input_text, input_file, language, speaker1, speaker2, api_key], outputs=[output_audio])
+        gr.Markdown("---\n### ℹ️ Tips:\n- Edit the script to fix any errors before generating audio\n- Use 'Speaker 1:' and 'Speaker 2:' format for each line")
+        
+        # Connect buttons
+        generate_script_btn.click(
+            fn=generate_script_only, 
+            inputs=[input_text, input_file, language, api_key], 
+            outputs=[script_output]
+        )
+        generate_audio_btn.click(
+            fn=generate_audio_from_script, 
+            inputs=[script_output, speaker1, speaker2], 
+            outputs=[output_audio]
+        )
     
     demo.launch(share=True, debug=debug)
 
