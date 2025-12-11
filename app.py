@@ -625,8 +625,9 @@ def main(debug=True):
         else:  # Mistral Local
             if LLM_MODEL is None:
                 raise gr.Error("❌ Mistral LLM not loaded! First run: load_llm_model()")
-            if input_file is not None:
-                raise gr.Error("❌ Mistral Local doesn't support file upload. Please paste text instead.")
+            # Note: Mistral can only process text files, not PDFs
+            if input_file is not None and input_file.name.lower().endswith('.pdf'):
+                raise gr.Error("❌ Mistral Local doesn't support PDF files. Upload a .txt file or paste text.")
         
         try:
             print(f"🚀 Generating script with {llm_choice}...")
@@ -647,7 +648,18 @@ def main(debug=True):
                 
                 script_json = asyncio.run(podcast_gen.generate_script(input_text, language, api_key, file_obj))
             else:  # Mistral Local
-                script_json = podcast_gen.generate_script_with_mistral(input_text, language, progress)
+                # Read text file if provided
+                combined_text = input_text or ""
+                if input_file is not None:
+                    try:
+                        with open(input_file.name, 'r', encoding='utf-8') as f:
+                            file_content = f.read()
+                        combined_text = f"{combined_text}\n\n{file_content}" if combined_text else file_content
+                        print(f"📄 Read {len(file_content)} chars from file")
+                    except Exception as e:
+                        print(f"⚠️ Could not read file: {e}")
+                
+                script_json = podcast_gen.generate_script_with_mistral(combined_text, language, progress)
             
             # Format script for display
             script_lines = []
