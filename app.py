@@ -227,7 +227,23 @@ class PodcastGenerator:
         pass
 
     async def generate_script(self, prompt: str, language: str, api_key: str, file_obj=None, progress=None) -> Dict:
-        example = """
+        # Use Hindi example for Hindi, English example for others
+        if language == "Hindi":
+            example = """
+{
+    "topic": "AI Technology",
+    "podcast": [
+        {"speaker": 1, "line": "नमस्ते दोस्तों! आज हम artificial intelligence के बारे में बात करेंगे।"},
+        {"speaker": 2, "line": "हाँ, AI आजकल बहुत popular topic है। Machine learning से लेकर deep learning तक।"},
+        {"speaker": 1, "line": "बिल्कुल सही। तो चलिए शुरू करते हैं। सबसे पहले, AI क्या है?"},
+        {"speaker": 2, "line": "AI का मतलब है artificial intelligence। यह computers को intelligent बनाने की technology है।"},
+        {"speaker": 1, "line": "और neural networks इसमें बहुत important role play करते हैं।"},
+        {"speaker": 2, "line": "Exactly! GPT और BERT जैसे models ने language processing में revolution ला दी है।"}
+    ]
+}
+            """
+        else:
+            example = """
 {
     "topic": "AGI",
     "podcast": [
@@ -241,7 +257,7 @@ class PodcastGenerator:
         {"speaker": 1, "line": "Sounds like a plan."}
     ]
 }
-        """
+            """
 
         if language == "Auto Detect":
             language_instruction = "- The podcast MUST be in the same language as the user input."
@@ -253,22 +269,27 @@ class PodcastGenerator:
 LANGUAGE RULES:
 {language_instruction}
 
-CRITICAL SCRIPT FORMAT FOR TTS:
-For Hindi/Indian languages, you MUST follow this format:
-1. Write Hindi/regional language words in their NATIVE SCRIPT (Devanagari for Hindi)
-2. Keep English technical words in ENGLISH (Roman script)
+⚠️ MANDATORY SCRIPT FORMAT - READ CAREFULLY:
 
-✅ CORRECT EXAMPLE:
-"नमस्ते दोस्तों! आज हम quantum mechanics के बारे में बात करेंगे। यह एक fascinating topic है।"
+For Hindi language, you MUST write in DEVANAGARI SCRIPT. This is NON-NEGOTIABLE.
+- NEVER use Roman transliteration like "Namaste", "kaise ho", "baat karte hain"
+- ALWAYS use Devanagari like "नमस्ते", "कैसे हो", "बात करते हैं"
 
-❌ WRONG - Do NOT write like this:
+ONLY exception: English technical terms stay in English.
+
+✅ CORRECT FORMAT (FOLLOW THIS EXACTLY):
+"नमस्ते दोस्तों! आज हम quantum mechanics के बारे में बात करेंगे।"
+"यह बहुत interesting topic है। Machine learning और AI में इसका use होता है।"
+
+❌ ABSOLUTELY WRONG (NEVER DO THIS):
 "Namaste dosto! Aaj hum quantum mechanics ke baare mein baat karenge."
+"Ye bahut interesting topic hai."
 
 RULES:
-- Hindi words → Devanagari script (नमस्ते, बात, करेंगे)
-- English technical terms → English (quantum mechanics, machine learning, API, GPU)
-- Brand names → English (Google, OpenAI, Python)
-- Numbers can be in either script
+- ALL Hindi words → देवनागरी (नमस्ते, बात, करेंगे, है, हम, आज)
+- English tech terms → English (quantum, machine learning, AI, API)
+- Brand names → English (Google, OpenAI)
+
 
 SCRIPT FORMAT RULES:
 - The podcast should have 2 speakers (Speaker 1 and Speaker 2)
