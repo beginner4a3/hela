@@ -18,7 +18,7 @@ from typing import List, Dict
 
 # Indic Parler TTS imports
 from parler_tts import ParlerTTSForConditionalGeneration
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 # Constants
 MAX_FILE_SIZE_MB = 20
@@ -33,6 +33,10 @@ MODEL = None
 TOKENIZER = None
 DESCRIPTION_TOKENIZER = None
 SAMPLING_RATE = None
+
+# Mistral LLM globals
+LLM_MODEL = None
+LLM_TOKENIZER = None
 
 
 def load_tts_model():
@@ -57,7 +61,39 @@ def load_tts_model():
     )
     SAMPLING_RATE = MODEL.config.sampling_rate
     
-    print(f"✅ Model loaded! Sampling rate: {SAMPLING_RATE} Hz")
+    print(f"✅ TTS Model loaded! Sampling rate: {SAMPLING_RATE} Hz")
+
+
+def load_llm_model():
+    """Load Mistral 7B LLM with 4-bit quantization"""
+    global LLM_MODEL, LLM_TOKENIZER
+    
+    if LLM_MODEL is not None:
+        return  # Already loaded
+    
+    print("📥 Loading Mistral 7B LLM (4-bit quantization)...")
+    print("   This may take 2-3 minutes on first run...")
+    
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_type="nf4"
+    )
+    
+    LLM_TOKENIZER = AutoTokenizer.from_pretrained(
+        "mistralai/Mistral-7B-Instruct-v0.3",
+        trust_remote_code=True
+    )
+    
+    LLM_MODEL = AutoModelForCausalLM.from_pretrained(
+        "mistralai/Mistral-7B-Instruct-v0.3",
+        quantization_config=quantization_config,
+        device_map="auto",
+        trust_remote_code=True
+    )
+    
+    print(f"✅ Mistral LLM loaded! GPU Memory: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
 
 
 # Voice configurations for Indic Parler TTS - Actual speaker names from the model
@@ -306,6 +342,68 @@ Follow this example structure:
             
         return json.loads(response.text)
     
+    def generate_script_with_mistral(self, prompt: str, language: str, progress=None) -> Dict:
+        """Generate podcast script using local Mistral LLM"""
+        if LLM_MODEL is None:
+            raise Exception("Mistral LLM not loaded! Run load_llm_model() first.")
+        
+        if language == "Auto Detect":
+            language_instruction = "Use the same language as the input text."
+        else:
+            language_instruction = f"Generate the podcast in {language} language."
+
+        system_prompt = f"""You are a professional podcast script generator optimized for Text-to-Speech (TTS) synthesis.
+
+LANGUAGE RULES:
+{language_instruction}
+
+CRITICAL TTS PRONUNCIATION RULES:
+1. KEEP ENGLISH WORDS IN ENGLISH (Roman script) - DO NOT transliterate
+   - CORRECT: "machine learning एक powerful technology है"
+   - WRONG: "मशीन लर्निंग एक पावरफुल टेक्नोलॉजी है"
+2. Technical terms, brand names, acronyms MUST stay in English
+3. Use simple, natural conversational sentences
+4. Add natural pauses using commas and periods
+
+OUTPUT FORMAT:
+Return ONLY a valid JSON object with this exact structure:
+{{"podcast": [{{"speaker": 1, "line": "text"}}, {{"speaker": 2, "line": "text"}}]}}
+
+Generate a long, engaging 2-speaker podcast script about: {prompt}"""
+
+        messages = [{"role": "user", "content": system_prompt}]
+        
+        if progress:
+            progress(0.2, "Generating script with Mistral...")
+        
+        inputs = LLM_TOKENIZER.apply_chat_template(messages, return_tensors="pt").to(LLM_MODEL.device)
+        
+        with torch.no_grad():
+            outputs = LLM_MODEL.generate(
+                inputs,
+                max_new_tokens=2000,
+                temperature=0.7,
+                do_sample=True,
+                pad_token_id=LLM_TOKENIZER.eos_token_id
+            )
+        
+        response = LLM_TOKENIZER.decode(outputs[0], skip_special_tokens=True)
+        
+        # Extract JSON from response
+        import re
+        json_match = re.search(r'\{.*"podcast".*\}', response, re.DOTALL)
+        if json_match:
+            try:
+                result = json.loads(json_match.group())
+                if progress:
+                    progress(0.4, "Script generated successfully!")
+                return result
+            except json.JSONDecodeError:
+                pass
+        
+        raise Exception("Failed to parse Mistral response as JSON. Try again or use Gemini API.")
+
+    
     async def _read_file_bytes(self, file_obj) -> bytes:
         if hasattr(file_obj, 'size'):
             file_size = file_obj.size
@@ -516,28 +614,40 @@ def main(debug=True):
     voice_options = list(VOICE_CONFIGS.keys())
     
     # Function to generate script only
-    def generate_script_only(input_text, input_file, language, api_key, progress=gr.Progress()):
+    def generate_script_only(input_text, input_file, llm_choice, language, api_key, progress=gr.Progress()):
         if not input_text and input_file is None:
             raise gr.Error("❌ Please enter some text OR upload a file!")
-        if not api_key or not api_key.strip():
-            raise gr.Error("❌ Please enter your Gemini API key!")
+        
+        # Validate based on LLM choice
+        if llm_choice == "Gemini API":
+            if not api_key or not api_key.strip():
+                raise gr.Error("❌ Please enter your Gemini API key!")
+        else:  # Mistral Local
+            if LLM_MODEL is None:
+                raise gr.Error("❌ Mistral LLM not loaded! First run: load_llm_model()")
+            if input_file is not None:
+                raise gr.Error("❌ Mistral Local doesn't support file upload. Please paste text instead.")
         
         try:
-            print("🚀 Generating script...")
+            print(f"🚀 Generating script with {llm_choice}...")
             sys.stdout.flush()
             
-            file_obj = input_file if input_file else None
-            
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                loop = None
-            if loop and loop.is_running():
-                import nest_asyncio
-                nest_asyncio.apply()
-            
             podcast_gen = PodcastGenerator()
-            script_json = asyncio.run(podcast_gen.generate_script(input_text, language, api_key, file_obj))
+            
+            if llm_choice == "Gemini API":
+                file_obj = input_file if input_file else None
+                
+                try:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    loop = None
+                if loop and loop.is_running():
+                    import nest_asyncio
+                    nest_asyncio.apply()
+                
+                script_json = asyncio.run(podcast_gen.generate_script(input_text, language, api_key, file_obj))
+            else:  # Mistral Local
+                script_json = podcast_gen.generate_script_with_mistral(input_text, language, progress)
             
             # Format script for display
             script_lines = []
@@ -709,8 +819,22 @@ def main(debug=True):
                 input_file = gr.File(label="📄 Or Upload File", file_types=[".pdf", ".txt"])
         
         with gr.Row():
+            llm_choice = gr.Dropdown(
+                label="🤖 Script Generator", 
+                choices=["Gemini API", "Mistral Local (GPU)"], 
+                value="Gemini API",
+                scale=1
+            )
             api_key = gr.Textbox(label="🔑 Gemini API Key", placeholder="Enter API key", type="password", scale=2)
             language = gr.Dropdown(label="🌍 Language", choices=language_options, value="Auto Detect", scale=1)
+        
+        # Input instructions based on LLM choice
+        input_instruction = gr.Markdown("""
+> **💡 Gemini API Tips:**
+> - Enter a topic or paste text content
+> - Upload PDF/TXT files for document-based podcasts
+> - Get API key from: [Google AI Studio](https://aistudio.google.com/app/apikey)
+""")
         
         # Step 1: Generate Script
         gr.Markdown("### Step 1: Generate Script")
@@ -774,7 +898,7 @@ def main(debug=True):
         # Connect buttons
         generate_script_btn.click(
             fn=generate_script_only, 
-            inputs=[input_text, input_file, language, api_key], 
+            inputs=[input_text, input_file, llm_choice, language, api_key], 
             outputs=[script_output]
         )
         generate_audio_btn.click(
