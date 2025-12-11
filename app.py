@@ -636,8 +636,8 @@ def main(debug=True):
                 print(f"   ... and {len(podcast_json['podcast']) - 5} more lines")
             sys.stdout.flush()
             
-            speaker1_desc = VOICE_CONFIGS.get(speaker1, VOICE_CONFIGS["Rohit - Male (Hindi/English)"])
-            speaker2_desc = VOICE_CONFIGS.get(speaker2, VOICE_CONFIGS["Divya - Female (Hindi/English)"])
+            speaker1_desc = VOICE_CONFIGS.get(speaker1, VOICE_CONFIGS["Rohit (Hindi)"])
+            speaker2_desc = VOICE_CONFIGS.get(speaker2, VOICE_CONFIGS["Divya (Hindi)"])
             
             podcast_gen = PodcastGenerator()
             audio_files = []
