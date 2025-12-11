@@ -162,7 +162,7 @@ Follow this example structure:
                 
             response = await asyncio.wait_for(
                 client.aio.models.generate_content(
-                    model="gemini-2.0-flash",
+                    model="gemini-2.5-flash-lite",
                     contents=messages,
                     config=types.GenerateContentConfig(
                         temperature=1,
