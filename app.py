@@ -60,26 +60,126 @@ def load_tts_model():
     print(f"✅ Model loaded! Sampling rate: {SAMPLING_RATE} Hz")
 
 
-# Voice configurations for Indic Parler TTS
+# Voice configurations for Indic Parler TTS - Actual speaker names from the model
 VOICE_CONFIGS = {
-    # Male Voices
-    "Rohit - Male (Hindi/English)": "Rohit speaks in a clear, moderate pace with a confident tone. The recording is of very high quality, with the speaker's voice sounding clear and very close up.",
-    "Karan - Male (Hindi/English)": "Karan's voice is warm and expressive with a moderate speed and natural pitch. The recording is very high quality with no background noise.",
-    "Vikram - Male (Hindi/English)": "Vikram speaks in a deep, slightly expressive tone with moderate speed. Very clear audio with professional quality.",
-    "Arjun - Male (Telugu)": "Arjun delivers speech with a clear, conversational tone at moderate pace. High quality recording with no background noise.",
-    "Suresh - Male (Tamil)": "Suresh speaks with a warm, engaging tone at moderate speed. The recording is of very high quality.",
+    # Assamese
+    "Amit (Assamese)": "Amit speaks in a clear, moderate pace with a confident tone. The recording is of very high quality.",
+    "Sita (Assamese)": "Sita's voice is expressive and pleasant with moderate speed. Very high quality recording.",
+    "Poonam (Assamese)": "Poonam speaks with a warm tone at moderate speed. High quality recording.",
+    "Rakesh (Assamese)": "Rakesh delivers speech with a clear, conversational tone. High quality recording.",
     
-    # Female Voices  
-    "Divya - Female (Hindi/English)": "Divya's voice is expressive and animated with a moderate speed and pleasant pitch. The recording is very high quality with the speaker's voice sounding clear.",
-    "Leela - Female (Hindi/English)": "Leela speaks in a high-pitched, fast-paced, and cheerful tone, full of energy and happiness. The recording is very high quality with no background noise.",
-    "Maya - Female (Hindi/English)": "Maya's voice is soft and soothing with a calm, measured delivery. Very clear audio with professional recording quality.",
-    "Sita - Female (Telugu)": "Sita speaks with a melodious, expressive tone at moderate pace. High quality recording with clear audio.",
-    "Priya - Female (Tamil)": "Priya delivers speech with a warm, conversational tone. The recording is very high quality with no background noise.",
+    # Bengali
+    "Arjun (Bengali)": "Arjun speaks in a clear, moderate pace with a confident tone. Very high quality recording.",
+    "Aditi (Bengali)": "Aditi's voice is expressive and animated with pleasant pitch. High quality recording.",
+    "Tapan (Bengali)": "Tapan speaks with a warm, engaging tone. Very high quality recording.",
+    "Rashmi (Bengali)": "Rashmi delivers speech with a melodious tone. High quality recording.",
+    "Arnav (Bengali)": "Arnav speaks clearly with moderate speed. High quality recording.",
+    "Riya (Bengali)": "Riya's voice is pleasant and expressive. Very high quality recording.",
     
-    # Accent-specific voices
-    "Indian English Male": "A male Indian English speaker with a clear accent delivers slightly expressive speech at moderate speed. Very high quality recording with clear audio.",
-    "Indian English Female": "A female Indian English speaker with a pleasant accent delivers animated speech with moderate pitch. The recording is of very high quality.",
+    # Bodo
+    "Bikram (Bodo)": "Bikram speaks in a clear tone with moderate pace. High quality recording.",
+    "Maya (Bodo)": "Maya's voice is expressive and pleasant. Very high quality recording.",
+    "Kalpana (Bodo)": "Kalpana speaks with a warm tone. High quality recording.",
+    
+    # Chhattisgarhi
+    "Bhanu (Chhattisgarhi)": "Bhanu speaks clearly with confident tone. High quality recording.",
+    "Champa (Chhattisgarhi)": "Champa's voice is pleasant and expressive. High quality recording.",
+    
+    # Dogri
+    "Karan (Dogri)": "Karan speaks in a clear, moderate pace. Very high quality recording.",
+    
+    # English (Indian)
+    "Thoma (English)": "Thoma speaks in a clear, moderate pace with Indian English accent. Very high quality recording.",
+    "Mary (English)": "Mary's voice is expressive with pleasant Indian English accent. High quality recording.",
+    "Swapna (English)": "Swapna speaks clearly with moderate speed. High quality recording.",
+    "Dinesh (English)": "Dinesh delivers speech with confident tone. Very high quality recording.",
+    "Meera (English)": "Meera's voice is warm and engaging. High quality recording.",
+    "Jatin (English)": "Jatin speaks with clear pronunciation. High quality recording.",
+    "Aakash (English)": "Aakash speaks confidently with moderate pace. High quality recording.",
+    "Sneha (English)": "Sneha's voice is pleasant and expressive. Very high quality recording.",
+    "Kabir (English)": "Kabir speaks clearly with engaging tone. High quality recording.",
+    "Tisha (English)": "Tisha's voice is animated and pleasant. High quality recording.",
+    
+    # Gujarati
+    "Yash (Gujarati)": "Yash speaks in a clear, confident tone. Very high quality recording.",
+    "Neha (Gujarati)": "Neha's voice is expressive and pleasant. High quality recording.",
+    
+    # Hindi
+    "Rohit (Hindi)": "Rohit speaks in a clear, moderate pace with a confident tone. The recording is of very high quality.",
+    "Divya (Hindi)": "Divya's voice is expressive and animated with moderate speed and pleasant pitch. Very high quality.",
+    "Aman (Hindi)": "Aman speaks with a warm, engaging tone. High quality recording.",
+    "Rani (Hindi)": "Rani's voice is melodious and pleasant. Very high quality recording.",
+    
+    # Kannada
+    "Suresh (Kannada)": "Suresh speaks in a clear, moderate pace with confident tone. Very high quality recording.",
+    "Anu (Kannada)": "Anu's voice is expressive and pleasant. High quality recording.",
+    "Chetan (Kannada)": "Chetan speaks with warm, engaging tone. High quality recording.",
+    "Vidya (Kannada)": "Vidya's voice is melodious and clear. Very high quality recording.",
+    
+    # Malayalam
+    "Anjali (Malayalam)": "Anjali's voice is expressive and pleasant. Very high quality recording.",
+    "Anju (Malayalam)": "Anju speaks with a warm tone. High quality recording.",
+    "Harish (Malayalam)": "Harish speaks in a clear, moderate pace. Very high quality recording.",
+    
+    # Manipuri
+    "Laishram (Manipuri)": "Laishram speaks clearly with moderate pace. High quality recording.",
+    "Ranjit (Manipuri)": "Ranjit's voice is clear and engaging. High quality recording.",
+    
+    # Marathi
+    "Sanjay (Marathi)": "Sanjay speaks in a clear, confident tone. Very high quality recording.",
+    "Sunita (Marathi)": "Sunita's voice is expressive and pleasant. High quality recording.",
+    "Nikhil (Marathi)": "Nikhil speaks with engaging tone. High quality recording.",
+    "Radha (Marathi)": "Radha's voice is melodious and clear. Very high quality recording.",
+    "Varun (Marathi)": "Varun speaks clearly with moderate speed. High quality recording.",
+    "Isha (Marathi)": "Isha's voice is pleasant and expressive. High quality recording.",
+    
+    # Nepali
+    "Amrita (Nepali)": "Amrita's voice is clear and pleasant. Very high quality recording.",
+    
+    # Odia
+    "Manas (Odia)": "Manas speaks in a clear, confident tone. Very high quality recording.",
+    "Debjani (Odia)": "Debjani's voice is expressive and pleasant. High quality recording.",
+    
+    # Punjabi
+    "Divjot (Punjabi)": "Divjot speaks in a clear, engaging tone. Very high quality recording.",
+    "Gurpreet (Punjabi)": "Gurpreet's voice is warm and expressive. High quality recording.",
+    
+    # Sanskrit
+    "Aryan (Sanskrit)": "Aryan speaks in a clear, measured tone. Very high quality recording.",
+    
+    # Tamil
+    "Kavitha (Tamil)": "Kavitha's voice is expressive and pleasant. High quality recording.",
+    "Jaya (Tamil)": "Jaya speaks in a clear, melodious tone. Very high quality recording.",
+    
+    # Telugu
+    "Prakash (Telugu)": "Prakash speaks in a clear, moderate pace with confident tone. Very high quality recording.",
+    "Lalitha (Telugu)": "Lalitha's voice is expressive and melodious. High quality recording.",
+    "Kiran (Telugu)": "Kiran speaks with warm, engaging tone. High quality recording.",
 }
+
+# Language to recommended speakers mapping
+LANGUAGE_SPEAKERS = {
+    "Assamese": {"speaker1": "Amit (Assamese)", "speaker2": "Sita (Assamese)"},
+    "Bengali": {"speaker1": "Arjun (Bengali)", "speaker2": "Aditi (Bengali)"},
+    "Bodo": {"speaker1": "Bikram (Bodo)", "speaker2": "Maya (Bodo)"},
+    "Chhattisgarhi": {"speaker1": "Bhanu (Chhattisgarhi)", "speaker2": "Champa (Chhattisgarhi)"},
+    "Dogri": {"speaker1": "Karan (Dogri)", "speaker2": "Karan (Dogri)"},
+    "English": {"speaker1": "Thoma (English)", "speaker2": "Mary (English)"},
+    "Gujarati": {"speaker1": "Yash (Gujarati)", "speaker2": "Neha (Gujarati)"},
+    "Hindi": {"speaker1": "Rohit (Hindi)", "speaker2": "Divya (Hindi)"},
+    "Kannada": {"speaker1": "Suresh (Kannada)", "speaker2": "Anu (Kannada)"},
+    "Malayalam": {"speaker1": "Anjali (Malayalam)", "speaker2": "Harish (Malayalam)"},
+    "Manipuri": {"speaker1": "Laishram (Manipuri)", "speaker2": "Ranjit (Manipuri)"},
+    "Marathi": {"speaker1": "Sanjay (Marathi)", "speaker2": "Sunita (Marathi)"},
+    "Nepali": {"speaker1": "Amrita (Nepali)", "speaker2": "Amrita (Nepali)"},
+    "Odia": {"speaker1": "Manas (Odia)", "speaker2": "Debjani (Odia)"},
+    "Punjabi": {"speaker1": "Divjot (Punjabi)", "speaker2": "Gurpreet (Punjabi)"},
+    "Sanskrit": {"speaker1": "Aryan (Sanskrit)", "speaker2": "Aryan (Sanskrit)"},
+    "Tamil": {"speaker1": "Jaya (Tamil)", "speaker2": "Kavitha (Tamil)"},
+    "Telugu": {"speaker1": "Prakash (Telugu)", "speaker2": "Lalitha (Telugu)"},
+    "Auto Detect": {"speaker1": "Rohit (Hindi)", "speaker2": "Divya (Hindi)"},
+}
+
 
 
 class PodcastGenerator:
@@ -384,18 +484,20 @@ def main(debug=True):
     load_tts_model()
     
     language_options = [
-        "Auto Detect", "Hindi", "Telugu", "Tamil", "Kannada", "Malayalam", "Bengali", "Marathi",
-        "Gujarati", "Odia", "Punjabi", "Assamese", "Urdu", "Nepali", "Sanskrit", "English",
-        "Afrikaans", "Albanian", "Amharic", "Arabic", "Armenian", "Azerbaijani",
-        "Bahasa Indonesian", "Bangla", "Basque", "Bosnian", "Bulgarian", "Burmese", "Catalan",
-        "Chinese Cantonese", "Chinese Mandarin", "Chinese Taiwanese", "Croatian", "Czech",
-        "Danish", "Dutch", "Estonian", "Filipino", "Finnish", "French", "Galician", "Georgian",
-        "German", "Greek", "Hebrew", "Hungarian", "Icelandic", "Irish", "Italian", "Japanese",
-        "Javanese", "Kazakh", "Khmer", "Korean", "Lao", "Latvian", "Lithuanian", "Macedonian",
-        "Malay", "Maltese", "Mongolian", "Norwegian Bokmål", "Pashto", "Persian", "Polish",
-        "Portuguese", "Romanian", "Russian", "Serbian", "Sinhala", "Slovak", "Slovene", "Somali",
-        "Spanish", "Sundanese", "Swahili", "Swedish", "Thai", "Turkish", "Ukrainian", "Uzbek",
-        "Vietnamese", "Welsh", "Zulu"
+        "Auto Detect",
+        # Indic Parler TTS supported languages (with available speakers)
+        "Hindi", "Bengali", "Telugu", "Tamil", "Kannada", "Malayalam", "Marathi",
+        "Gujarati", "Odia", "Punjabi", "Assamese", "Nepali", "Sanskrit", "English",
+        "Manipuri", "Bodo", "Dogri", "Chhattisgarhi",
+        # Other languages (for script generation - will use closest speaker)
+        "Urdu", "Afrikaans", "Albanian", "Amharic", "Arabic", "Armenian", "Azerbaijani",
+        "Bahasa Indonesian", "Basque", "Bosnian", "Bulgarian", "Burmese", "Catalan",
+        "Chinese Cantonese", "Chinese Mandarin", "Croatian", "Czech", "Danish", "Dutch",
+        "Estonian", "Filipino", "Finnish", "French", "Georgian", "German", "Greek",
+        "Hebrew", "Hungarian", "Icelandic", "Irish", "Italian", "Japanese", "Korean",
+        "Latvian", "Lithuanian", "Malay", "Norwegian", "Persian", "Polish", "Portuguese",
+        "Romanian", "Russian", "Serbian", "Slovak", "Spanish", "Swedish", "Thai",
+        "Turkish", "Ukrainian", "Vietnamese", "Welsh"
     ]
     
     voice_options = list(VOICE_CONFIGS.keys())
@@ -596,13 +698,26 @@ def main(debug=True):
         # Step 2: Generate Audio
         gr.Markdown("### Step 2: Choose Voices & Generate Audio")
         with gr.Row():
-            speaker1 = gr.Dropdown(label="🎤 Speaker 1 Voice", choices=voice_options, value="Rohit - Male (Hindi/English)")
-            speaker2 = gr.Dropdown(label="🎤 Speaker 2 Voice", choices=voice_options, value="Divya - Female (Hindi/English)")
+            speaker1 = gr.Dropdown(label="🎤 Speaker 1 Voice", choices=voice_options, value="Rohit (Hindi)")
+            speaker2 = gr.Dropdown(label="🎤 Speaker 2 Voice", choices=voice_options, value="Divya (Hindi)")
         
         generate_audio_btn = gr.Button("🎧 Generate Podcast Audio", variant="primary", size="lg")
         output_audio = gr.Audio(label="🎧 Generated Podcast", type="filepath", format="wav")
         
-        gr.Markdown("---\n### ℹ️ Tips:\n- Edit the script to fix any errors before generating audio\n- Use 'Speaker 1:' and 'Speaker 2:' format for each line")
+        gr.Markdown("---\n### ℹ️ Tips:\n- Select language to auto-set recommended speakers\n- Edit the script before generating audio\n- Use 'Speaker 1:' and 'Speaker 2:' format")
+        
+        # Function to update speakers when language changes
+        def update_speakers_for_language(lang):
+            if lang in LANGUAGE_SPEAKERS:
+                return LANGUAGE_SPEAKERS[lang]["speaker1"], LANGUAGE_SPEAKERS[lang]["speaker2"]
+            return "Rohit (Hindi)", "Divya (Hindi)"
+        
+        # Connect language change to update speakers
+        language.change(
+            fn=update_speakers_for_language,
+            inputs=[language],
+            outputs=[speaker1, speaker2]
+        )
         
         # Connect buttons
         generate_script_btn.click(
