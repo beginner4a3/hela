@@ -253,14 +253,22 @@ class PodcastGenerator:
 LANGUAGE RULES:
 {language_instruction}
 
-CRITICAL TTS PRONUNCIATION RULES:
-1. KEEP ENGLISH WORDS IN ENGLISH (Roman script) - DO NOT transliterate to Devanagari/regional scripts
-   - CORRECT: "machine learning एक powerful technology है"
-   - WRONG: "मशीन लर्निंग एक पावरफुल टेक्नोलॉजी है"
-2. Technical terms, brand names, acronyms MUST stay in English: API, GPU, Python, Google, OpenAI, etc.
-3. Use simple, natural conversational sentences - avoid complex compound words
-4. Add natural pauses using commas and periods for better prosody
-5. Avoid words that are difficult to pronounce or tongue-twisters
+CRITICAL SCRIPT FORMAT FOR TTS:
+For Hindi/Indian languages, you MUST follow this format:
+1. Write Hindi/regional language words in their NATIVE SCRIPT (Devanagari for Hindi)
+2. Keep English technical words in ENGLISH (Roman script)
+
+✅ CORRECT EXAMPLE:
+"नमस्ते दोस्तों! आज हम quantum mechanics के बारे में बात करेंगे। यह एक fascinating topic है।"
+
+❌ WRONG - Do NOT write like this:
+"Namaste dosto! Aaj hum quantum mechanics ke baare mein baat karenge."
+
+RULES:
+- Hindi words → Devanagari script (नमस्ते, बात, करेंगे)
+- English technical terms → English (quantum mechanics, machine learning, API, GPU)
+- Brand names → English (Google, OpenAI, Python)
+- Numbers can be in either script
 
 SCRIPT FORMAT RULES:
 - The podcast should have 2 speakers (Speaker 1 and Speaker 2)
@@ -361,16 +369,21 @@ Follow this example structure:
 LANGUAGE RULES:
 {language_instruction}
 
-CRITICAL TTS PRONUNCIATION RULES:
-1. KEEP ENGLISH WORDS IN ENGLISH (Roman script) - DO NOT transliterate
-   - CORRECT: "machine learning एक powerful technology है"
-   - WRONG: "मशीन लर्निंग एक पावरफुल टेक्नोलॉजी है"
-2. Technical terms, brand names, acronyms MUST stay in English
-3. Use simple, natural conversational sentences
-4. Add natural pauses using commas and periods
+CRITICAL SCRIPT FORMAT FOR TTS:
+For Hindi/Indian languages, you MUST follow this format:
+1. Write Hindi/regional words in NATIVE SCRIPT (Devanagari for Hindi)
+2. Keep English technical words in ENGLISH (Roman script)
+
+✅ CORRECT: "नमस्ते! आज हम quantum mechanics के बारे में बात करेंगे।"
+❌ WRONG: "Namaste! Aaj hum quantum mechanics ke baare mein baat karenge."
+
+RULES:
+- Hindi words → Devanagari (नमस्ते, बात, करेंगे)
+- English tech terms → English (quantum mechanics, API, GPU)
+- Brand names → English (Google, OpenAI)
 
 OUTPUT FORMAT:
-Return ONLY a valid JSON object with this exact structure:
+Return ONLY a valid JSON object:
 {{"podcast": [{{"speaker": 1, "line": "text"}}, {{"speaker": 2, "line": "text"}}]}}
 
 Generate a long, engaging 2-speaker podcast script about: {prompt}"""
