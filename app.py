@@ -16,6 +16,10 @@ import soundfile as sf
 import numpy as np
 from typing import List, Dict
 
+# Apply nest_asyncio for Colab compatibility
+import nest_asyncio
+nest_asyncio.apply()
+
 # Indic Parler TTS imports
 from parler_tts import ParlerTTSForConditionalGeneration
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
