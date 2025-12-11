@@ -208,15 +208,28 @@ class PodcastGenerator:
         else:
             language_instruction = f"- The podcast MUST be in {language} language"
 
-        system_prompt = f"""
-You are a professional podcast generator. Your task is to generate a professional podcast script based on the user input.
+        system_prompt = f"""You are a professional podcast script generator optimized for Text-to-Speech (TTS) synthesis.
+
+LANGUAGE RULES:
 {language_instruction}
-- The podcast should have 2 speakers.
-- The podcast should be long.
-- Do not use names for the speakers.
-- The podcast should be interesting, lively, and engaging, and hook the listener from the start.
-- The input text might be disorganized or unformatted. Ignore any formatting inconsistencies; distill the essential points.
-- The script must be in JSON format.
+
+CRITICAL TTS PRONUNCIATION RULES:
+1. KEEP ENGLISH WORDS IN ENGLISH (Roman script) - DO NOT transliterate to Devanagari/regional scripts
+   - CORRECT: "machine learning एक powerful technology है"
+   - WRONG: "मशीन लर्निंग एक पावरफुल टेक्नोलॉजी है"
+2. Technical terms, brand names, acronyms MUST stay in English: API, GPU, Python, Google, OpenAI, etc.
+3. Use simple, natural conversational sentences - avoid complex compound words
+4. Add natural pauses using commas and periods for better prosody
+5. Avoid words that are difficult to pronounce or tongue-twisters
+
+SCRIPT FORMAT RULES:
+- The podcast should have 2 speakers (Speaker 1 and Speaker 2)
+- Generate a long, engaging podcast script
+- Do not use speaker names, only "speaker": 1 or "speaker": 2
+- Make it interesting, lively, and hook the listener from the start
+- Keep sentences short to medium length for natural speech flow
+- The script must be in JSON format
+
 Follow this example structure:
 {example}
 """
@@ -544,9 +557,19 @@ def main(debug=True):
             raise gr.Error(f"Error: {str(e)}")
     
     # Function to generate audio from script
-    def generate_audio_from_script(script_text, speaker1, speaker2, progress=gr.Progress()):
+    def generate_audio_from_script(script_text, speaker1, speaker2, 
+                                   s1_pace, s1_pitch, s1_tone, s1_quality,
+                                   s2_pace, s2_pitch, s2_tone, s2_quality,
+                                   progress=gr.Progress()):
         if not script_text or not script_text.strip():
             raise gr.Error("❌ No script to convert! Generate or enter a script first.")
+        
+        # Build dynamic voice descriptions
+        def build_voice_description(speaker_name, pace, pitch, tone, quality):
+            name = speaker_name.split(" (")[0] if " (" in speaker_name else speaker_name
+            pitch_desc = f"{pitch}-pitched" if pitch != "normal" else "balanced"
+            tone_desc = tone if tone != "monotone" else "slightly monotone"
+            return f"{name} speaks at a {pace} pace with a {pitch_desc} voice. The delivery is {tone_desc}. {quality}."
         
         try:
             print("🎙️ Converting script to audio...")
@@ -636,8 +659,13 @@ def main(debug=True):
                 print(f"   ... and {len(podcast_json['podcast']) - 5} more lines")
             sys.stdout.flush()
             
-            speaker1_desc = VOICE_CONFIGS.get(speaker1, VOICE_CONFIGS["Rohit (Hindi)"])
-            speaker2_desc = VOICE_CONFIGS.get(speaker2, VOICE_CONFIGS["Divya (Hindi)"])
+            # Build voice descriptions with controls
+            speaker1_desc = build_voice_description(speaker1, s1_pace, s1_pitch, s1_tone, s1_quality)
+            speaker2_desc = build_voice_description(speaker2, s2_pace, s2_pitch, s2_tone, s2_quality)
+            
+            print(f"🔊 Speaker 1: {speaker1_desc}")
+            print(f"🔊 Speaker 2: {speaker2_desc}")
+            sys.stdout.flush()
             
             podcast_gen = PodcastGenerator()
             audio_files = []
@@ -701,10 +729,34 @@ def main(debug=True):
             speaker1 = gr.Dropdown(label="🎤 Speaker 1 Voice", choices=voice_options, value="Rohit (Hindi)")
             speaker2 = gr.Dropdown(label="🎤 Speaker 2 Voice", choices=voice_options, value="Divya (Hindi)")
         
+        # Voice control options
+        pace_options = ["slow", "moderate", "fast"]
+        pitch_options = ["low", "normal", "high"]
+        tone_options = ["monotone", "expressive", "cheerful", "urgent"]
+        quality_options = ["very clear audio", "clear audio"]
+        
+        # Speaker 1 Voice Controls
+        with gr.Accordion("🎚️ Speaker 1 Voice Settings", open=False):
+            with gr.Row():
+                s1_pace = gr.Dropdown(label="Pace", choices=pace_options, value="moderate")
+                s1_pitch = gr.Dropdown(label="Pitch", choices=pitch_options, value="normal")
+            with gr.Row():
+                s1_tone = gr.Dropdown(label="Tone", choices=tone_options, value="expressive")
+                s1_quality = gr.Dropdown(label="Audio Quality", choices=quality_options, value="very clear audio")
+        
+        # Speaker 2 Voice Controls
+        with gr.Accordion("🎚️ Speaker 2 Voice Settings", open=False):
+            with gr.Row():
+                s2_pace = gr.Dropdown(label="Pace", choices=pace_options, value="moderate")
+                s2_pitch = gr.Dropdown(label="Pitch", choices=pitch_options, value="normal")
+            with gr.Row():
+                s2_tone = gr.Dropdown(label="Tone", choices=tone_options, value="expressive")
+                s2_quality = gr.Dropdown(label="Audio Quality", choices=quality_options, value="very clear audio")
+        
         generate_audio_btn = gr.Button("🎧 Generate Podcast Audio", variant="primary", size="lg")
         output_audio = gr.Audio(label="🎧 Generated Podcast", type="filepath", format="wav")
         
-        gr.Markdown("---\n### ℹ️ Tips:\n- Select language to auto-set recommended speakers\n- Edit the script before generating audio\n- Use 'Speaker 1:' and 'Speaker 2:' format")
+        gr.Markdown("---\n### ℹ️ Tips:\n- Expand voice settings to customize pace, pitch, tone\n- Select language to auto-set recommended speakers")
         
         # Function to update speakers when language changes
         def update_speakers_for_language(lang):
@@ -727,7 +779,7 @@ def main(debug=True):
         )
         generate_audio_btn.click(
             fn=generate_audio_from_script, 
-            inputs=[script_output, speaker1, speaker2], 
+            inputs=[script_output, speaker1, speaker2, s1_pace, s1_pitch, s1_tone, s1_quality, s2_pace, s2_pitch, s2_tone, s2_quality], 
             outputs=[output_audio]
         )
     

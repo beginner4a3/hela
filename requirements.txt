@@ -11,5 +11,10 @@ torch
 transformers
 huggingface_hub
 
+# For Mistral LLM (4-bit quantization)
+accelerate
+bitsandbytes
+
 # Gradio UI
 gradio
+nest_asyncio
