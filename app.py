@@ -450,25 +450,89 @@ def main(debug=True):
             print("🎙️ Converting script to audio...")
             sys.stdout.flush()
             
-            # Parse the script back to JSON format
-            lines = script_text.strip().split("\n\n")
+            # Parse the script - handle multiple formats
             podcast_json = {"podcast": []}
             
-            for line in lines:
-                if line.strip():
-                    if line.startswith("Speaker 1:"):
-                        podcast_json["podcast"].append({
-                            "speaker": 1,
-                            "line": line.replace("Speaker 1:", "").strip()
-                        })
-                    elif line.startswith("Speaker 2:"):
-                        podcast_json["podcast"].append({
-                            "speaker": 2,
-                            "line": line.replace("Speaker 2:", "").strip()
-                        })
+            # Split by lines (handle both \n\n and \n)
+            raw_lines = script_text.strip().replace('\r\n', '\n').split('\n')
+            
+            # Combine lines that belong together (if they don't start with a speaker indicator)
+            combined_lines = []
+            current_line = ""
+            
+            for raw_line in raw_lines:
+                raw_line = raw_line.strip()
+                if not raw_line:
+                    if current_line:
+                        combined_lines.append(current_line)
+                        current_line = ""
+                    continue
+                
+                # Check if this line starts with a speaker indicator
+                import re
+                speaker_pattern = r'^(Speaker\s*[12]|S[12]|[12])\s*[:\.]\s*'
+                if re.match(speaker_pattern, raw_line, re.IGNORECASE):
+                    if current_line:
+                        combined_lines.append(current_line)
+                    current_line = raw_line
+                else:
+                    # Continuation of previous line
+                    if current_line:
+                        current_line += " " + raw_line
+                    else:
+                        current_line = raw_line
+            
+            if current_line:
+                combined_lines.append(current_line)
+            
+            # Parse each combined line
+            for line in combined_lines:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                # Try different speaker patterns
+                speaker = None
+                text = line
+                
+                # Pattern: "Speaker 1:" or "Speaker 2:"
+                if re.match(r'^Speaker\s*1\s*[:\.]\s*', line, re.IGNORECASE):
+                    speaker = 1
+                    text = re.sub(r'^Speaker\s*1\s*[:\.]\s*', '', line, flags=re.IGNORECASE)
+                elif re.match(r'^Speaker\s*2\s*[:\.]\s*', line, re.IGNORECASE):
+                    speaker = 2
+                    text = re.sub(r'^Speaker\s*2\s*[:\.]\s*', '', line, flags=re.IGNORECASE)
+                # Pattern: "S1:" or "S2:"
+                elif re.match(r'^S1\s*[:\.]\s*', line, re.IGNORECASE):
+                    speaker = 1
+                    text = re.sub(r'^S1\s*[:\.]\s*', '', line, flags=re.IGNORECASE)
+                elif re.match(r'^S2\s*[:\.]\s*', line, re.IGNORECASE):
+                    speaker = 2
+                    text = re.sub(r'^S2\s*[:\.]\s*', '', line, flags=re.IGNORECASE)
+                # Pattern: "1:" or "2:" or "1." or "2."
+                elif re.match(r'^1\s*[:\.]\s*', line):
+                    speaker = 1
+                    text = re.sub(r'^1\s*[:\.]\s*', '', line)
+                elif re.match(r'^2\s*[:\.]\s*', line):
+                    speaker = 2
+                    text = re.sub(r'^2\s*[:\.]\s*', '', line)
+                
+                if speaker and text.strip():
+                    podcast_json["podcast"].append({
+                        "speaker": speaker,
+                        "line": text.strip()
+                    })
             
             if not podcast_json["podcast"]:
-                raise gr.Error("❌ Could not parse script. Use format: 'Speaker 1: text' or 'Speaker 2: text'")
+                raise gr.Error("❌ Could not parse script. Use format like:\nSpeaker 1: Hello\nSpeaker 2: Hi there\n\nOr: S1: Hello / S2: Hi / 1: Hello / 2: Hi")
+            
+            # Print what was parsed
+            print(f"📋 Parsed {len(podcast_json['podcast'])} lines:")
+            for i, item in enumerate(podcast_json['podcast'][:5]):  # Show first 5
+                print(f"   {i+1}. Speaker {item['speaker']}: {item['line'][:50]}...")
+            if len(podcast_json['podcast']) > 5:
+                print(f"   ... and {len(podcast_json['podcast']) - 5} more lines")
+            sys.stdout.flush()
             
             speaker1_desc = VOICE_CONFIGS.get(speaker1, VOICE_CONFIGS["Rohit - Male (Hindi/English)"])
             speaker2_desc = VOICE_CONFIGS.get(speaker2, VOICE_CONFIGS["Divya - Female (Hindi/English)"])
